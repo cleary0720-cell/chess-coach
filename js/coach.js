@@ -1,7 +1,7 @@
 // Claude Haiku coaching via Cloudflare Worker proxy
 // Update PROXY_URL after deploying the worker
 
-const PROXY_URL = 'https://chess-claude-proxy.YOUR_SUBDOMAIN.workers.dev';
+const PROXY_URL = 'https://chess-claude-proxy.cleary0720.workers.dev';
 
 const SYSTEM_PROMPT = `You are a friendly, encouraging chess coach helping an improving player get better.
 Give concise, specific feedback — 2 to 3 sentences max. Always be specific to the position, never generic.
