@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Coach — History</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">♟ ChessCoach</a>
+  <a href="index.html">Play</a>
+  <a href="lessons.html">Lessons</a>
+  <a href="history.html" class="active">History</a>
+  <a href="stats.html">Stats</a>
+</nav>
+
+<div class="page">
+  <div class="history-layout">
+
+    <!-- GAME LIST -->
+    <div>
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:14px">Past Games</h2>
+      <div class="game-list" id="gameList">
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <p>No games yet. Play a game to see your history.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW PANEL -->
+    <div id="reviewPanel" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <span id="reviewResult" style="font-size:18px;font-weight:700"></span>
+          <span id="reviewMeta" style="font-size:13px;color:var(--text-muted)"></span>
+          <span style="margin-left:auto;display:flex;gap:6px">
+            <span id="reviewAccuracy" style="font-size:13px"></span>
+            <span id="reviewACPL" style="font-size:13px;color:var(--text-muted)"></span>
+          </span>
+        </div>
+        <canvas id="evalChart" height="80"></canvas>
+      </div>
+
+      <div class="two-col" style="grid-template-columns:auto 1fr">
+        <div class="board-wrap">
+          <div class="review-controls">
+            <button class="btn btn-secondary btn-sm" onclick="reviewFirst()">⏮</button>
+            <button class="btn btn-secondary btn-sm" onclick="reviewPrev()">◀</button>
+            <button class="btn btn-secondary btn-sm" onclick="reviewNext()">▶</button>
+            <button class="btn btn-secondary btn-sm" onclick="reviewLast()">⏭</button>
+            <span id="reviewMoveLabel" style="font-size:13px;color:var(--text-muted);margin-left:8px"></span>
+          </div>
+          <div id="reviewBoard"></div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3>Move List</h3>
+            <div class="move-history" id="reviewMoveList" style="max-height:360px"></div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h3>Coach Notes</h3>
+            <div id="reviewCoachNote" style="font-size:13px;line-height:1.6;color:var(--text);min-height:60px">
+              <span style="color:var(--text-muted)">Select a move to see coaching.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="noReview" style="display:flex;align-items:center;justify-content:center;height:300px">
+      <div class="empty-state">
+        <div class="icon">👈</div>
+        <p>Select a game from the list to review it.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="lib/chess.min.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/board.js"></script>
+<script src="js/history.js"></script>
+</body>
+</html>

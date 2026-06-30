@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Coach — Play</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">♟ ChessCoach</a>
+  <a href="index.html" class="active">Play</a>
+  <a href="lessons.html">Lessons</a>
+  <a href="history.html">History</a>
+  <a href="stats.html">Stats</a>
+</nav>
+
+<div class="page">
+  <div class="two-col">
+
+    <!-- BOARD COLUMN -->
+    <div class="board-wrap">
+      <div class="turn-indicator">
+        <div class="turn-dot" id="turnDot"></div>
+        <span id="turnText">White to move</span>
+      </div>
+      <div id="board"></div>
+      <div class="eval-bar-wrap">
+        <span id="evalLabel">0.0</span>
+        <div class="eval-bar"><div class="eval-bar-fill" id="evalBarFill" style="width:50%"></div></div>
+        <span id="evalLabelRight"></span>
+      </div>
+    </div>
+
+    <!-- COACH PANEL -->
+    <div class="coach-panel">
+
+      <!-- Settings card -->
+      <div class="card">
+        <h3>Game Setup</h3>
+        <div class="color-row" style="margin-bottom:14px">
+          <button class="color-btn active" data-color="white" onclick="setColor('white',this)">♙ White</button>
+          <button class="color-btn" data-color="black" onclick="setColor('black',this)">♟ Black</button>
+          <button class="color-btn" data-color="random" onclick="setColor('random',this)">🎲 Random</button>
+        </div>
+        <div class="skill-row">
+          <label>Difficulty</label>
+          <input type="range" id="skillSlider" min="0" max="20" value="10" oninput="updateSkillLabel()">
+          <span id="skillLabel">~1800 ELO</span>
+        </div>
+        <div class="game-controls" style="margin-top:14px">
+          <button class="btn btn-primary" onclick="newGame()" style="flex:1">New Game</button>
+          <button class="btn btn-secondary" onclick="resignGame()">Resign</button>
+        </div>
+      </div>
+
+      <!-- Coach output -->
+      <div class="card" id="coachCard">
+        <h3>Coach</h3>
+        <div id="coachContent">
+          <div class="empty-state" style="padding:16px 0">
+            <div class="icon">🎓</div>
+            <p>Make your first move to start receiving coaching.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Move history -->
+      <div class="card">
+        <h3>Move History</h3>
+        <div class="move-history" id="moveHistory"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Game end modal -->
+<div id="gameEndModal" style="display:none" class="lesson-modal-overlay">
+  <div class="lesson-modal">
+    <div class="game-end-banner">
+      <h2 id="gameEndTitle">Game Over</h2>
+      <div class="game-end-stats">
+        <div class="stat"><div class="val" id="geAccuracy">—</div><div class="lbl">Accuracy</div></div>
+        <div class="stat"><div class="val" id="geACPL">—</div><div class="lbl">Avg CP Loss</div></div>
+        <div class="stat"><div class="val" id="geBlunders">—</div><div class="lbl">Blunders</div></div>
+        <div class="stat"><div class="val" id="geMistakes">—</div><div class="lbl">Mistakes</div></div>
+      </div>
+      <div id="geEloChange" style="margin-bottom:14px;font-size:14px;color:#8a8a9a"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-primary" onclick="newGame();closeModal()">Play Again</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Review</button>
+        <button class="btn btn-secondary" onclick="window.location='history.html'">See History</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="lib/chess.min.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/board.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Coach — Lessons</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">♟ ChessCoach</a>
+  <a href="index.html">Play</a>
+  <a href="lessons.html" class="active">Lessons</a>
+  <a href="history.html">History</a>
+  <a href="stats.html">Stats</a>
+</nav>
+
+<div class="page">
+  <div class="lessons-layout">
+
+    <!-- PUZZLE BOARD COLUMN -->
+    <div>
+      <div class="board-wrap">
+        <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:min(560px,calc(100vw - 48px))">
+          <span id="puzzleSideLabel" style="font-size:13px;color:var(--text-muted)">Loading puzzle...</span>
+          <span class="streak-badge" style="margin-left:auto">🔥 <span id="streakCount">0</span></span>
+        </div>
+        <div id="puzzleBoard"></div>
+        <div style="display:flex;align-items:center;gap:10px;width:100%;max-width:min(560px,calc(100vw - 48px))">
+          <span class="puzzle-status" id="puzzleStatus"></span>
+          <span class="puzzle-info" id="puzzleInfo" style="margin-left:auto"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PUZZLE CONTROLS + LESSONS -->
+    <div class="puzzle-panel">
+
+      <div class="card">
+        <h3>Tactics Trainer</h3>
+        <div class="theme-filter" id="themeFilter">
+          <button class="theme-btn active" data-angle="">All</button>
+          <button class="theme-btn" data-angle="fork">Fork</button>
+          <button class="theme-btn" data-angle="pin">Pin</button>
+          <button class="theme-btn" data-angle="skewer">Skewer</button>
+          <button class="theme-btn" data-angle="discoveredAttack">Discovery</button>
+          <button class="theme-btn" data-angle="backRankMate">Back Rank</button>
+          <button class="theme-btn" data-angle="mateIn1">Mate in 1</button>
+          <button class="theme-btn" data-angle="mateIn2">Mate in 2</button>
+          <button class="theme-btn" data-angle="endgame">Endgame</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn btn-primary" id="nextPuzzleBtn" onclick="nextPuzzle()" style="flex:1">Next Puzzle</button>
+          <button class="btn btn-secondary" onclick="showHint()">Hint</button>
+        </div>
+        <div id="puzzleExplanation" style="margin-top:12px;font-size:13px;line-height:1.6;color:var(--text);display:none"></div>
+      </div>
+
+      <!-- Mini lessons -->
+      <div class="card">
+        <h3>Learn</h3>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showTab('openings',this)">Openings</button>
+          <button class="tab-btn" onclick="showTab('tactics',this)">Tactics</button>
+          <button class="tab-btn" onclick="showTab('endgames',this)">Endgames</button>
+        </div>
+        <div id="lessonsContent"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Lesson modal -->
+<div id="lessonModal" class="lesson-modal-overlay" style="display:none" onclick="if(event.target===this)closeLessonModal()">
+  <div class="lesson-modal">
+    <button class="close-btn" onclick="closeLessonModal()">✕</button>
+    <h2 id="lessonModalTitle"></h2>
+    <div id="lessonModalBody" class="lesson-content"></div>
+  </div>
+</div>
+
+<script src="lib/chess.min.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/board.js"></script>
+<script src="js/lessons.js"></script>
+</body>
+</html>
