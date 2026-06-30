@@ -115,8 +115,6 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
   justify-content: center;
   position: relative;
   cursor: pointer;
-  font-size: clamp(28px, 5vw, 52px);
-  line-height: 1;
   transition: background 0.1s;
 }
 
@@ -157,14 +155,13 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
 .sq .coord.rank { top: 2px; left: 3px; }
 
 /* Piece */
-.piece { pointer-events: none; z-index: 1; }
-.piece[data-color="w"] {
-  color: #fff;
-  text-shadow: 0 0 3px #000, 0 0 6px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-}
-.piece[data-color="b"] {
-  color: #1a1a1a;
-  text-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.5), 1px 1px 0 rgba(255,255,255,0.6), -1px -1px 0 rgba(255,255,255,0.6);
+.piece {
+  pointer-events: none;
+  z-index: 1;
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  display: block;
 }
 
 /* COACH PANEL */
@@ -351,7 +348,7 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
   overflow: hidden;
   margin: 12px auto;
 }
-.mini-board .sq { font-size: 22px; }
+.mini-board .sq .piece { width: 90%; height: 90%; }
 
 /* CANVAS CHART */
 canvas { border-radius: var(--radius); display: block; }

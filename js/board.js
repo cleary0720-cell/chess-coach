@@ -1,7 +1,8 @@
 // Vanilla chess board renderer. Wraps chess.js.
 // Usage: const b = new ChessBoard('board-element-id', chess, { onMove, flipped });
 
-const PIECES = {
+const PIECE_CDN = 'https://cdn.jsdelivr.net/gh/lichess-org/lila/public/piece/cburnett/';
+const PIECE_UNICODE = {
   wK:'♔', wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
   bK:'♚', bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟',
 };
@@ -70,10 +71,11 @@ class ChessBoard {
       const piece = this.chess.get(sqName);
       if (piece) {
         const key = piece.color + piece.type.toUpperCase();
-        const p = document.createElement('span');
+        const p = document.createElement('img');
         p.className = 'piece';
+        p.src = PIECE_CDN + key + '.svg';
+        p.alt = key;
         p.dataset.color = piece.color;
-        p.textContent = PIECES[key];
         sq.appendChild(p);
       }
 
