@@ -459,11 +459,17 @@ function handleSuggestion(uci) {
 
   board.flashBestMove(uci, 7000);
 
-  // Convert UCI to SAN for Claude
+  // Extract piece info explicitly so Claude doesn't have to guess from FEN
+  const fromSq = uci.slice(0, 2);
+  const toSq   = uci.slice(2, 4);
+  const pieceObj = chess.get(fromSq);
+  const PNAMES = {k:'King', q:'Queen', r:'Rook', b:'Bishop', n:'Knight', p:'Pawn'};
+  const pieceName = pieceObj ? PNAMES[pieceObj.type] : 'piece';
+
   let moveSAN = uci;
   try {
     const tmp = new Chess(chess.fen());
-    const m = tmp.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
+    const m = tmp.move({ from: fromSq, to: toSq, promotion: uci[4] || 'q' });
     if (m) moveSAN = m.san;
   } catch(e) {}
 
@@ -476,8 +482,7 @@ function handleSuggestion(uci) {
     </div>`;
 
   getSuggestionCoaching({
-    uci, moveSAN,
-    fen: chess.fen(),
+    uci, moveSAN, pieceName, fromSq, toSq,
     playerColor,
     phase: gamePhase(Math.ceil(moveHistory.length / 2)),
   }).then(text => {

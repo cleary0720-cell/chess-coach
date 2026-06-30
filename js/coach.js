@@ -7,26 +7,40 @@ const SYSTEM_PROMPT = `You are a friendly, encouraging chess coach helping a beg
 Give concise, specific feedback — 2 to 3 sentences max. Always be specific to the position, never generic.
 Reference chess concepts by name (pin, fork, hanging piece, discovered attack, etc.) but always explain what the term means in plain English for this exact position.
 When the player blundered, be honest but constructive — explain what went wrong and what to look for next time.
-CRITICAL: Never use chess notation abbreviations on their own. Always write moves in plain English, like "Bishop to b5, giving check" or "pawn captures on d5" — never just "Bb5+" or "exd5". The player is a beginner who does not know chess notation.`;
+CRITICAL: Never use chess notation abbreviations on their own. Always write moves in plain English, like "Bishop to b5, giving check" or "pawn captures on d5" — never just "Bb5+" or "exd5". The player is a beginner who does not know chess notation.
+STRICT ACCURACY RULE: Only state the location of pieces you are given explicitly in the move data below. NEVER guess or infer where other pieces are from the FEN — you may misread it. If you want to mention a piece's location, only do so if it is the piece being moved or the piece being captured. Do not mention where the king, rooks, or any other piece is unless that information is directly given to you.`;
+
+const PIECE_NAMES = {K:'King', Q:'Queen', R:'Rook', B:'Bishop', N:'Knight'};
+function pieceFromSAN(san) {
+  if (!san) return 'piece';
+  if (san.startsWith('O')) return 'King (castling)';
+  return PIECE_NAMES[san[0]] || 'Pawn';
+}
 
 async function getCoaching(ctx) {
-  const { moveNumber, playerColor, userMoveSAN, userMoveUCI, bestMoveSAN, bestMoveUCI, cpLoss, quality, fenBefore, fenAfter, phase } = ctx;
+  const { moveNumber, playerColor, userMoveSAN, userMoveUCI, bestMoveSAN, bestMoveUCI, cpLoss, quality, fenBefore, phase } = ctx;
+
+  const userPiece = pieceFromSAN(userMoveSAN);
+  const userFrom  = userMoveUCI ? userMoveUCI.slice(0,2) : '?';
+  const userTo    = userMoveUCI ? userMoveUCI.slice(2,4) : '?';
+  const bestPiece = pieceFromSAN(bestMoveSAN);
+  const bestFrom  = bestMoveUCI ? bestMoveUCI.slice(0,2) : '?';
+  const bestTo    = bestMoveUCI ? bestMoveUCI.slice(2,4) : '?';
 
   const isGreatMove = cpLoss <= 25;
   const instruction = isGreatMove
-    ? `This was a ${quality.toLowerCase()} move. In 2 sentences, explain what makes ${userMoveSAN} strong in this position.`
-    : `In 2–3 sentences: (1) explain concisely what's wrong with ${userMoveSAN} or what it misses, (2) explain what ${bestMoveSAN} achieves instead. Be specific to the position.`;
+    ? `This was a ${quality.toLowerCase()} move. In 2 sentences, explain what makes moving the ${userPiece} from ${userFrom} to ${userTo} strong here.`
+    : `In 2–3 sentences: (1) explain what's wrong with moving the ${userPiece} from ${userFrom} to ${userTo}, (2) explain what moving the ${bestPiece} from ${bestFrom} to ${bestTo} achieves instead.`;
 
   const techniqueNote = ctx.focusTechnique
-    ? `\nFocus technique this session: ${ctx.focusTechnique}. After your main feedback, add one sentence if there is a ${ctx.focusTechnique} opportunity available for ${playerColor} in the current position. If none exists, do not mention it.`
+    ? `\nFocus technique: ${ctx.focusTechnique}. After your main feedback, add one sentence if there is a clear ${ctx.focusTechnique} opportunity in the current position. If none, do not mention it.`
     : '';
 
-  const userMessage = `Move ${moveNumber} — playing as ${playerColor}.
-Player played: ${userMoveSAN} (${userMoveUCI})
-Stockfish's best move: ${bestMoveSAN} (${bestMoveUCI})
-Centipawn loss: ${cpLoss}cp — classified as: ${quality}
+  const userMessage = `Move ${moveNumber} — ${playerColor} to play.
+Player moved: ${userPiece} from ${userFrom} to ${userTo} (centipawn loss: ${cpLoss}cp — ${quality})
+Stockfish's best: ${bestPiece} from ${bestFrom} to ${bestTo}
 Game phase: ${phase}
-FEN before the move: ${fenBefore}
+FEN (for context only — do NOT describe positions of pieces not listed above): ${fenBefore}
 
 ${instruction}${techniqueNote}`;
 
@@ -49,12 +63,11 @@ ${instruction}${techniqueNote}`;
   }
 }
 
-async function getSuggestionCoaching({ uci, moveSAN, fen, playerColor, phase }) {
-  const userMessage = `The player asked for a move suggestion. They are playing as ${playerColor}, game phase: ${phase}.
-FEN: ${fen}
-Best move found: ${moveSAN} (${uci})
+async function getSuggestionCoaching({ uci, moveSAN, pieceName, fromSq, toSq, playerColor, phase }) {
+  const userMessage = `The player (${playerColor}) asked for a move suggestion. Game phase: ${phase}.
+Suggested move: Move your ${pieceName} from ${fromSq} to ${toSq}.
 
-In 2-3 sentences, explain in plain English why this is a good move. What does it accomplish — what threat does it create, what piece does it develop, or what weakness does it fix? Write for a beginner. Never use chess notation abbreviations without explaining them.`;
+In 2-3 sentences, explain in plain English why this is a good move. What does it accomplish — what threat does it create, what piece does it develop, or what weakness does it fix? Only describe the ${pieceName} being moved and pieces it directly interacts with. Do not describe the location of any other pieces. Write for a beginner.`;
 
   try {
     const response = await fetch(PROXY_URL, {
