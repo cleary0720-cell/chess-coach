@@ -49,6 +49,31 @@ ${instruction}${techniqueNote}`;
   }
 }
 
+async function getSuggestionCoaching({ uci, moveSAN, fen, playerColor, phase }) {
+  const userMessage = `The player asked for a move suggestion. They are playing as ${playerColor}, game phase: ${phase}.
+FEN: ${fen}
+Best move found: ${moveSAN} (${uci})
+
+In 2-3 sentences, explain in plain English why this is a good move. What does it accomplish — what threat does it create, what piece does it develop, or what weakness does it fix? Write for a beginner. Never use chess notation abbreviations without explaining them.`;
+
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }],
+      }),
+    });
+    if (!response.ok) throw new Error('Worker error: ' + response.status);
+    const data = await response.json();
+    return data.content?.[0]?.text || 'This is a strong move for your position.';
+  } catch(err) {
+    console.warn('Suggestion coaching failed:', err);
+    throw err;
+  }
+}
+
 // Offline fallback if Worker is not yet deployed or errors
 function fallbackCoaching(cpLoss, quality, userMoveSAN, bestMoveSAN) {
   if (cpLoss <= 10)  return `Great move! ${userMoveSAN} was the best choice in this position.`;

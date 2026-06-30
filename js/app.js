@@ -97,6 +97,9 @@ function handleWorkerMsg(event) {
       const bestMoveUCI = pendingAnalysis.bestMoveFromPre;
       const evalAfterVal = parseLastScore(msg.infoLines);
       finishMoveAnalysis(bestMoveUCI, evalAfterVal);
+    } else if (analysisPhase === 'suggest') {
+      analysisPhase = 'idle';
+      handleSuggestion(msg.bestMove);
     } else {
       // Engine's reply move
       const engineMoveUCI = msg.bestMove;
@@ -439,6 +442,60 @@ function showMoveCoaching(idx) {
   const entry = moveLog[idx];
   if (!entry) return;
   renderCoachingCard(entry, entry.coaching, false);
+}
+
+function suggestMove() {
+  if (!gameActive || analysisPhase !== 'idle') return;
+  const btn = document.getElementById('suggestBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '💡 Thinking…'; }
+  analysisPhase = 'suggest';
+  sfWorker.postMessage({ cmd: 'analyzePosition', payload: { fen: chess.fen(), depth: 12 } });
+}
+
+function handleSuggestion(uci) {
+  const btn = document.getElementById('suggestBtn');
+  if (btn) { btn.disabled = false; btn.textContent = '💡 Suggest a Move'; }
+  if (!uci || uci === '(none)') return;
+
+  board.flashBestMove(uci, 7000);
+
+  // Convert UCI to SAN for Claude
+  let moveSAN = uci;
+  try {
+    const tmp = new Chess(chess.fen());
+    const m = tmp.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
+    if (m) moveSAN = m.san;
+  } catch(e) {}
+
+  document.getElementById('coachContent').innerHTML = `
+    <div class="coaching-card">
+      <div class="move-badge" style="background:rgba(83,52,131,0.25);color:#a78bfa;margin-bottom:10px">💡 Suggested Move</div>
+      <div class="coach-text">
+        <div class="thinking"><span>Getting explanation</span><div class="dots"><span></span><span></span><span></span></div></div>
+      </div>
+    </div>`;
+
+  getSuggestionCoaching({
+    uci, moveSAN,
+    fen: chess.fen(),
+    playerColor,
+    phase: gamePhase(Math.ceil(moveHistory.length / 2)),
+  }).then(text => {
+    document.getElementById('coachContent').innerHTML = `
+      <div class="coaching-card">
+        <div class="move-badge" style="background:rgba(83,52,131,0.25);color:#a78bfa;margin-bottom:10px">💡 Suggested Move</div>
+        <div class="coach-text">${text}</div>
+        <div class="best-move-row" style="margin-top:10px">
+          <button class="btn btn-secondary btn-sm" onclick="board.flashBestMove('${uci}',5000)">Show again</button>
+        </div>
+      </div>`;
+  }).catch(() => {
+    document.getElementById('coachContent').innerHTML = `
+      <div class="coaching-card">
+        <div class="move-badge" style="background:rgba(83,52,131,0.25);color:#a78bfa;margin-bottom:10px">💡 Suggested Move</div>
+        <div class="coach-text">Try ${sanToEnglish(moveSAN)} — it's the strongest option in this position.</div>
+      </div>`;
+  });
 }
 
 function undoMove() {
