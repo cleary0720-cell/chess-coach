@@ -50,8 +50,23 @@
         </div>
         <div class="game-controls" style="margin-top:14px">
           <button class="btn btn-primary" onclick="newGame()" style="flex:1">New Game</button>
+          <button class="btn btn-secondary" onclick="undoMove()" id="undoBtn" disabled>↩ Undo</button>
           <button class="btn btn-secondary" onclick="resignGame()">Resign</button>
         </div>
+      </div>
+
+      <!-- Technique Focus -->
+      <div class="card">
+        <h3>Focus Technique</h3>
+        <div class="technique-grid">
+          <button class="technique-btn" onclick="setTechnique('Fork',this)">Fork</button>
+          <button class="technique-btn" onclick="setTechnique('Pin',this)">Pin</button>
+          <button class="technique-btn" onclick="setTechnique('Skewer',this)">Skewer</button>
+          <button class="technique-btn" onclick="setTechnique('Discovered Attack',this)">Discovered Attack</button>
+          <button class="technique-btn" onclick="setTechnique('Back Rank Mate',this)">Back Rank Mate</button>
+          <button class="technique-btn" onclick="setTechnique('Hanging Pieces',this)">Hanging Pieces</button>
+        </div>
+        <p class="technique-desc" id="techniqueDesc"></p>
       </div>
 
       <!-- Coach output -->

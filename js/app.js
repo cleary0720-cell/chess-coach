@@ -6,12 +6,13 @@ const SKILL_ELO = [
   2400,2500,2600,2700,3000,
 ];
 
-let chess       = new Chess();
-let board       = null;
-let sfWorker    = null;
-let playerColor = 'white';
-let skillLevel  = 10;
-let gameActive  = false;
+let chess          = new Chess();
+let board          = null;
+let sfWorker       = null;
+let playerColor    = 'white';
+let skillLevel     = 10;
+let gameActive     = false;
+let focusTechnique = null;
 
 // Per-game tracking
 let moveLog     = [];          // [{san, uci, fenBefore, fenAfter, evalBefore, evalAfter, cpLoss, quality, coaching}]
@@ -44,6 +45,7 @@ function init() {
   moveHistory = [];
   gameActive  = true;
   analysisPhase = 'idle';
+  updateUndoBtn();
 
   updateSkillLabel();
   renderMoveHistory();
@@ -211,6 +213,7 @@ function finishMoveAnalysis(bestMoveUCIFromPre, evalAfterVal) {
 
   moveLog.push(entry);
   renderMoveHistory();
+  updateUndoBtn();
 
   // Show coaching card immediately with quality, then fetch Claude
   renderCoachingCard(entry, null, true);
@@ -227,6 +230,7 @@ function finishMoveAnalysis(bestMoveUCIFromPre, evalAfterVal) {
     fenBefore,
     fenAfter,
     phase:        gamePhase(moveNum),
+    focusTechnique,
   }).then(text => {
     entry.coaching = text;
     renderCoachingCard(entry, text, false);
@@ -435,6 +439,69 @@ function showMoveCoaching(idx) {
   const entry = moveLog[idx];
   if (!entry) return;
   renderCoachingCard(entry, entry.coaching, false);
+}
+
+function undoMove() {
+  if (moveLog.length === 0) return;
+
+  if (sfWorker) sfWorker.postMessage({ cmd: 'stop' });
+  analysisPhase = 'idle';
+  pendingAnalysis = null;
+
+  // Undo engine's move then user's move
+  chess.undo();
+  chess.undo();
+  moveHistory.pop();
+  moveHistory.pop();
+  moveLog.pop();
+
+  // Restore last-move highlight from remaining history
+  const hist = chess.history({ verbose: true });
+  board.lastMove = hist.length > 0
+    ? { from: hist[hist.length - 1].from, to: hist[hist.length - 1].to }
+    : null;
+  board.highlighted = null;
+  board._clearArrows();
+  board.setInteractive(true);
+  board.render();
+
+  gameActive = true;
+  renderMoveHistory();
+  updateTurnIndicator();
+  updateUndoBtn();
+
+  document.getElementById('coachContent').innerHTML = `
+    <div class="empty-state" style="padding:16px 0">
+      <div class="icon">↩</div>
+      <p>Move undone. Make your next move to continue.</p>
+    </div>`;
+}
+
+function updateUndoBtn() {
+  const btn = document.getElementById('undoBtn');
+  if (btn) btn.disabled = moveLog.length === 0;
+}
+
+const TECHNIQUE_DESCS = {
+  'Fork':              'Coach will alert you when you can attack two pieces at once with one move.',
+  'Pin':               'Coach will spot when you can pin an opponent\'s piece to a more valuable one behind it.',
+  'Skewer':            'Coach will look for skewers — forcing a valuable piece to move and winning what\'s behind it.',
+  'Discovered Attack': 'Coach will highlight when moving one piece reveals a hidden attack by another.',
+  'Back Rank Mate':    'Coach will watch for checkmate threats on the opponent\'s back rank.',
+  'Hanging Pieces':    'Coach will point out undefended opponent pieces you can capture for free.',
+};
+
+function setTechnique(tech, btn) {
+  if (focusTechnique === tech) {
+    focusTechnique = null;
+    document.querySelectorAll('.technique-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('techniqueDesc').textContent = '';
+  } else {
+    focusTechnique = tech;
+    document.querySelectorAll('.technique-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('techniqueDesc').textContent = TECHNIQUE_DESCS[tech] || '';
+  }
 }
 
 function sanToEnglish(san) {

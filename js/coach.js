@@ -17,6 +17,10 @@ async function getCoaching(ctx) {
     ? `This was a ${quality.toLowerCase()} move. In 2 sentences, explain what makes ${userMoveSAN} strong in this position.`
     : `In 2–3 sentences: (1) explain concisely what's wrong with ${userMoveSAN} or what it misses, (2) explain what ${bestMoveSAN} achieves instead. Be specific to the position.`;
 
+  const techniqueNote = ctx.focusTechnique
+    ? `\nFocus technique this session: ${ctx.focusTechnique}. After your main feedback, add one sentence if there is a ${ctx.focusTechnique} opportunity available for ${playerColor} in the current position. If none exists, do not mention it.`
+    : '';
+
   const userMessage = `Move ${moveNumber} — playing as ${playerColor}.
 Player played: ${userMoveSAN} (${userMoveUCI})
 Stockfish's best move: ${bestMoveSAN} (${bestMoveUCI})
@@ -24,7 +28,7 @@ Centipawn loss: ${cpLoss}cp — classified as: ${quality}
 Game phase: ${phase}
 FEN before the move: ${fenBefore}
 
-${instruction}`;
+${instruction}${techniqueNote}`;
 
   try {
     const response = await fetch(PROXY_URL, {
