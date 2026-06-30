@@ -36,13 +36,20 @@ async function getCoaching(ctx) {
     ? `\nFocus technique: ${ctx.focusTechnique}. After your main feedback, add one sentence if there is a clear ${ctx.focusTechnique} opportunity in the current position. If none, do not mention it.`
     : '';
 
+  const openingNote = ctx.selectedOpening
+    ? `\nOpening being practiced: ${ctx.selectedOpening.name} (${ctx.selectedOpening.color})
+Main line: ${ctx.selectedOpening.mainLine}
+Key ideas: ${ctx.selectedOpening.ideas}
+Opening guidance: After your move feedback, add 1 sentence checking if the player is following this opening's principles. If they played the main-line move, confirm it. If they deviated, briefly say what the main-line move would have been.`
+    : '';
+
   const userMessage = `Move ${moveNumber} — ${playerColor} to play.
 Player moved: ${userPiece} from ${userFrom} to ${userTo} (centipawn loss: ${cpLoss}cp — ${quality})
 Stockfish's best: ${bestPiece} from ${bestFrom} to ${bestTo}
 Game phase: ${phase}
 FEN (for context only — do NOT describe positions of pieces not listed above): ${fenBefore}
 
-${instruction}${techniqueNote}`;
+${instruction}${techniqueNote}${openingNote}`;
 
   try {
     const response = await fetch(PROXY_URL, {

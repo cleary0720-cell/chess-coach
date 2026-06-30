@@ -15,7 +15,7 @@ const Storage = (() => {
   return {
     getGames()    { return get(KEY_GAMES, []); },
     getStats()    { return get(KEY_STATS, { gamesPlayed:0, wins:0, losses:0, draws:0, avgAccuracy:0, avgACPL:0, eloHistory:[], recommendedSkillLevel:10 }); },
-    getSettings() { return get(KEY_SETTINGS, { skillLevel:10, playerColor:'white', showCoaching:true }); },
+    getSettings() { return get(KEY_SETTINGS, { skillLevel:5, playerColor:'white', showCoaching:true }); },
     getPuzzles()  { return get(KEY_PUZZLES, { solved:[], streak:0, byTheme:{} }); },
 
     saveGame(gameObj) {

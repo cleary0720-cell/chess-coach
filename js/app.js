@@ -1,18 +1,32 @@
 // Main game controller for index.html
 
 const SKILL_ELO = [
-  800,900,1000,1100,1200,1300,1400,1500,
-  1600,1700,1800,1900,2000,2100,2200,2300,
-  2400,2500,2600,2700,3000,
+  200, 400, 600,                                              // 0-2  new beginner levels
+  800, 900, 1000, 1100, 1200, 1300, 1400, 1500,             // 3-10
+  1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300,           // 11-18
+  2400, 2500, 2600, 2700, 3000,                              // 19-23
 ];
 
-let chess          = new Chess();
-let board          = null;
-let sfWorker       = null;
-let playerColor    = 'white';
-let skillLevel     = 10;
-let gameActive     = false;
-let focusTechnique = null;
+function getSFSkill(level) {
+  if (level <= 2) return 0;          // all beginner levels use SF skill 0
+  return Math.min(20, level - 3);   // level 3→SF0, level 4→SF1, ..., level 23→SF20
+}
+
+function getMoveTime(level) {
+  if (level === 0) return 75;
+  if (level === 1) return 250;
+  if (level === 2) return 600;
+  return 1500;
+}
+
+let chess            = new Chess();
+let board            = null;
+let sfWorker         = null;
+let playerColor      = 'white';
+let skillLevel       = 10;
+let gameActive       = false;
+let focusTechnique   = null;
+let selectedOpening  = null;
 
 // Per-game tracking
 let moveLog     = [];          // [{san, uci, fenBefore, fenAfter, evalBefore, evalAfter, cpLoss, quality, coaching}]
@@ -234,6 +248,7 @@ function finishMoveAnalysis(bestMoveUCIFromPre, evalAfterVal) {
     fenAfter,
     phase:        gamePhase(moveNum),
     focusTechnique,
+    selectedOpening,
   }).then(text => {
     entry.coaching = text;
     renderCoachingCard(entry, text, false);
@@ -254,7 +269,7 @@ function engineMove() {
   if (!gameActive) return;
   sfWorker.postMessage({
     cmd: 'makeMove',
-    payload: { moves: moveHistory.join(' '), skillLevel, movetime: 1200 },
+    payload: { moves: moveHistory.join(' '), skillLevel: getSFSkill(skillLevel), movetime: getMoveTime(skillLevel) },
   });
 }
 
@@ -360,7 +375,7 @@ function updateSkillLabel() {
   skillLevel = parseInt(document.getElementById('skillSlider').value);
   Storage.saveSettings({ skillLevel });
   document.getElementById('skillLabel').textContent = '~' + SKILL_ELO[skillLevel] + ' ELO';
-  if (sfWorker) sfWorker.postMessage({ cmd: 'setSkill', payload: { level: skillLevel } });
+  if (sfWorker) sfWorker.postMessage({ cmd: 'setSkill', payload: { level: getSFSkill(skillLevel) } });
 }
 
 function updateTurnIndicator() {
@@ -563,6 +578,32 @@ function setTechnique(tech, btn) {
     document.querySelectorAll('.technique-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('techniqueDesc').textContent = TECHNIQUE_DESCS[tech] || '';
+  }
+}
+
+const OPENINGS = {
+  'Italian Game':    { color:'white', mainLine:'1.e4 e5 2.Nf3 Nc6 3.Bc4',        ideas:'Open with your king\'s pawn (e4), develop your knight to f3, then place your bishop on c4 aiming at f7. Castle kingside for safety. The goal is fast development and central control.' },
+  'Ruy López':       { color:'white', mainLine:'1.e4 e5 2.Nf3 Nc6 3.Bb5',        ideas:'After e4 and Nf3, pin Black\'s knight with your bishop on b5. This indirectly pressures Black\'s e5 pawn. Follow up with castle, d3 or d4 to open the center.' },
+  "Queen's Gambit":  { color:'white', mainLine:'1.d4 d5 2.c4',                    ideas:'Open with d4, then offer the c-pawn with c4 — this is the gambit. If Black captures it you get active pieces; if Black declines, you have a strong center. Follow up with Nc3, Nf3, and e3.' },
+  'London System':   { color:'white', mainLine:'1.d4 d5 2.Nf3 Nf6 3.Bf4',        ideas:'Open with d4, develop your knight to f3, then bring your bishop to f4 before playing e3. This solid setup is hard to attack. Follow up with Be2, c3, and castle kingside.' },
+  'King\'s Fianchetto': { color:'white', mainLine:'1.g3 2.Bg2 3.Nf3',            ideas:'Fianchetto your bishop to g2 (via g3) to control the center from a distance. This hypermodern approach lets Black take the center while you undermine it. Follow up with d3, Nf3, and castle.' },
+  'Sicilian Defense':  { color:'black', mainLine:'1...c5 (after White plays e4)', ideas:'When White plays e4, respond with c5. This fights for the center without mirroring White. Aim to develop your knight to c6 or f6, control d4, and create queenside counterplay.' },
+  'French Defense':    { color:'black', mainLine:'1...e6 (after White plays e4)', ideas:'When White plays e4, respond with e6. Plan to follow with d5 to challenge the center. The French is solid — you accept a slightly cramped position but get a strong pawn structure to build on.' },
+  'Caro-Kann':         { color:'black', mainLine:'1...c6 (after White plays e4)', ideas:'When White plays e4, respond with c6, preparing d5. This challenges the center solidly without early piece development. Black gets a very solid structure and good endgame prospects.' },
+  "King's Indian":     { color:'black', mainLine:'1...Nf6 2...g6 3...Bg7',        ideas:'Develop your knight to f6, fianchetto your bishop to g7 (via g6). Let White build a big center, then counterattack with d6 and e5. Your bishop on g7 becomes a powerful long-range weapon.' },
+};
+
+function setOpening(name, btn) {
+  if (selectedOpening?.name === name) {
+    selectedOpening = null;
+    document.querySelectorAll('.opening-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('openingDesc').textContent = '';
+  } else {
+    const o = OPENINGS[name];
+    selectedOpening = { name, ...o };
+    document.querySelectorAll('.opening-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('openingDesc').textContent = `${o.color === 'white' ? 'As White' : 'As Black'} · ${o.mainLine}`;
   }
 }
 
