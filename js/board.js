@@ -9,15 +9,16 @@ const PIECE_UNICODE = {
 
 class ChessBoard {
   constructor(containerId, chess, opts = {}) {
-    this.el       = document.getElementById(containerId);
-    this.chess    = chess;
-    this.onMove   = opts.onMove || (() => {});
-    this.flipped  = opts.flipped || false;
+    this.el          = document.getElementById(containerId);
+    this.chess       = chess;
+    this.onMove      = opts.onMove || (() => {});
+    this.flipped     = opts.flipped || false;
     this.interactive = opts.interactive !== false;
-    this.selected = null;      // currently clicked square
-    this.legalDests = [];
-    this.lastMove = null;      // { from, to }
-    this.highlighted = null;   // best-move square to flash
+    this.selected    = null;
+    this.legalDests  = [];
+    this.lastMove    = null;
+    this.highlighted = null;
+    this.userArrows  = [];
     this._build();
   }
 
@@ -59,12 +60,10 @@ class ChessBoard {
     // SVG overlay for arrows
     this.arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.arrowSvg.setAttribute('viewBox', '0 0 8 8');
-    this.arrowSvg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:visible';
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    defs.innerHTML = `<marker id="arr-${this.el.id}" markerWidth="5" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0,5 2,0 4" fill="rgba(0,190,90,0.92)"/></marker>`;
-    this.arrowSvg.appendChild(defs);
+    this.arrowSvg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:hidden';
     this.el.appendChild(this.arrowSvg);
 
+    this._setupArrowDraw();
     this.render();
   }
 
@@ -123,7 +122,7 @@ class ChessBoard {
         this.selected = null;
         this.legalDests = [];
         this.highlighted = null;
-        this._clearArrows();
+        this._clearAiArrows();
         this.render();
         this.onMove(move);
         return;
@@ -173,13 +172,13 @@ class ChessBoard {
     if (!uci) return;
     const from = uci.slice(0, 2);
     const to   = uci.slice(2, 4);
-    this._clearArrows();
+    this._clearAiArrows();
     this.highlighted = { from, to };
     this.render();
-    this._drawArrow(from, to);
+    this._drawArrow(from, to, 'rgba(0,200,80,0.88)', 'ai-arrow');
     setTimeout(() => {
       this.highlighted = null;
-      this._clearArrows();
+      this._clearAiArrows();
       this.render();
     }, durationMs);
   }
@@ -190,26 +189,79 @@ class ChessBoard {
     return { x: fi + 0.5, y: ri + 0.5 };
   }
 
-  _clearArrows() {
-    if (this.arrowSvg) this.arrowSvg.querySelectorAll('line').forEach(e => e.remove());
+  _clearAiArrows() {
+    if (this.arrowSvg) this.arrowSvg.querySelectorAll('.ai-arrow').forEach(e => e.remove());
   }
 
-  _drawArrow(from, to) {
+  _clearArrows() {
+    this._clearAiArrows();
+    if (this.arrowSvg) this.arrowSvg.querySelectorAll('.user-arrow').forEach(e => e.remove());
+    this.userArrows = [];
+  }
+
+  _drawArrow(from, to, color, cls) {
     const fc = this._squareCenter(from);
     const tc = this._squareCenter(to);
     const dx = tc.x - fc.x, dy = tc.y - fc.y;
     const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.1) return;
     const ux = dx / len, uy = dy / len;
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', fc.x + ux * 0.25);
-    line.setAttribute('y1', fc.y + uy * 0.25);
-    line.setAttribute('x2', tc.x - ux * 0.32);
-    line.setAttribute('y2', tc.y - uy * 0.32);
-    line.setAttribute('stroke', 'rgba(0,190,90,0.92)');
-    line.setAttribute('stroke-width', '0.28');
-    line.setAttribute('stroke-linecap', 'round');
-    line.setAttribute('marker-end', `url(#arr-${this.el.id})`);
-    this.arrowSvg.appendChild(line);
+    const px = -uy,  py = ux; // perpendicular
+
+    const SW  = 0.14;                        // shaft half-width
+    const HW  = 0.28;                        // head half-width
+    const HL  = Math.min(0.45, len * 0.45); // head length
+    const gap = 0.22;                        // gap from source center
+
+    const sx  = fc.x + ux * gap, sy  = fc.y + uy * gap;
+    const hbx = tc.x - ux * HL,  hby = tc.y - uy * HL;
+
+    const pts = [
+      [sx  + px*SW,  sy  + py*SW],
+      [hbx + px*SW,  hby + py*SW],
+      [hbx + px*HW,  hby + py*HW],
+      [tc.x,         tc.y        ],
+      [hbx - px*HW,  hby - py*HW],
+      [hbx - px*SW,  hby - py*SW],
+      [sx  - px*SW,  sy  - py*SW],
+    ].map(([x, y]) => `${x.toFixed(4)},${y.toFixed(4)}`).join(' ');
+
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', color);
+    poly.setAttribute('opacity', '0.88');
+    poly.classList.add(cls);
+    this.arrowSvg.appendChild(poly);
+  }
+
+  _setupArrowDraw() {
+    let dragFrom = null;
+
+    this.el.addEventListener('contextmenu', e => e.preventDefault());
+
+    this.el.addEventListener('mousedown', e => {
+      if (e.button !== 2) return;
+      e.preventDefault();
+      const sq = e.target.closest('[data-sq]');
+      dragFrom = sq ? sq.dataset.sq : null;
+    });
+
+    this.el.addEventListener('mouseup', e => {
+      if (e.button !== 2) return;
+      e.preventDefault();
+      const sq = e.target.closest('[data-sq]');
+      const dragTo = sq ? sq.dataset.sq : null;
+
+      if (dragFrom && dragTo && dragFrom !== dragTo) {
+        this.userArrows.push({ from: dragFrom, to: dragTo });
+        this._drawArrow(dragFrom, dragTo, 'rgba(235,145,0,0.88)', 'user-arrow');
+      } else {
+        // Click without drag — clear user arrows
+        this.arrowSvg.querySelectorAll('.user-arrow').forEach(e => e.remove());
+        this.userArrows = [];
+      }
+      dragFrom = null;
+    });
   }
 
   flip(flipped) {
