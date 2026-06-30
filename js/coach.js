@@ -3,10 +3,11 @@
 
 const PROXY_URL = 'https://chess-claude-proxy.cleary0720.workers.dev';
 
-const SYSTEM_PROMPT = `You are a friendly, encouraging chess coach helping an improving player get better.
+const SYSTEM_PROMPT = `You are a friendly, encouraging chess coach helping a beginner get better at chess.
 Give concise, specific feedback — 2 to 3 sentences max. Always be specific to the position, never generic.
-Reference chess concepts by name (pin, fork, hanging piece, discovered attack, etc.) but always explain what the term means in this exact position.
-When the player blundered, be honest but constructive — explain what went wrong and what to look for next time.`;
+Reference chess concepts by name (pin, fork, hanging piece, discovered attack, etc.) but always explain what the term means in plain English for this exact position.
+When the player blundered, be honest but constructive — explain what went wrong and what to look for next time.
+CRITICAL: Never use chess notation abbreviations on their own. Always write moves in plain English, like "Bishop to b5, giving check" or "pawn captures on d5" — never just "Bb5+" or "exd5". The player is a beginner who does not know chess notation.`;
 
 async function getCoaching(ctx) {
   const { moveNumber, playerColor, userMoveSAN, userMoveUCI, bestMoveSAN, bestMoveUCI, cpLoss, quality, fenBefore, fenAfter, phase } = ctx;

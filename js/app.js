@@ -406,7 +406,7 @@ function renderCoachingCard(entry, coachText, loading) {
       </div>
       ${entry.bestMoveUCI !== entry.uci ? `
         <div class="best-move-row">
-          Best: <strong>${entry.bestMoveSAN}</strong>
+          Best: <strong>${sanToEnglish(entry.bestMoveSAN)}</strong>
           ${bestBtn}
         </div>` : ''}
     </div>`;
@@ -435,6 +435,27 @@ function showMoveCoaching(idx) {
   const entry = moveLog[idx];
   if (!entry) return;
   renderCoachingCard(entry, entry.coaching, false);
+}
+
+function sanToEnglish(san) {
+  if (!san) return san;
+  if (san === 'O-O-O') return 'queenside castle';
+  if (san === 'O-O')   return 'kingside castle';
+  const pieces = { K:'King', Q:'Queen', R:'Rook', B:'Bishop', N:'Knight' };
+  const check = san.includes('#') ? ' (checkmate)' : san.includes('+') ? ' (check)' : '';
+  const clean = san.replace(/[+#!?]/g, '');
+  const hasPiece = pieces[clean[0]];
+  const piece = hasPiece ? pieces[clean[0]] : 'Pawn';
+  const rest  = hasPiece ? clean.slice(1) : clean;
+  if (rest.includes('x')) {
+    const dest = rest.split('x').pop();
+    return `${piece} captures on ${dest}${check}`;
+  }
+  if (rest.includes('=')) {
+    const [dest, promo] = rest.split('=');
+    return `Pawn to ${dest}, promotes to ${pieces[promo] || promo}${check}`;
+  }
+  return `${piece} to ${rest}${check}`;
 }
 
 // Load settings on startup

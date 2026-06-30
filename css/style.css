@@ -105,6 +105,7 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
   border-radius: 4px;
   overflow: hidden;
   user-select: none;
+  position: relative;
 }
 
 .sq {
@@ -123,7 +124,8 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
 .sq.selected { background: #f6f669 !important; opacity: 0.8; }
 .sq.last-move-from { background: rgba(246,246,105,0.5) !important; }
 .sq.last-move-to   { background: rgba(246,246,105,0.7) !important; }
-.sq.best-move { background: rgba(0,200,100,0.55) !important; }
+.sq.best-move      { background: rgba(0,200,100,0.65) !important; }
+.sq.best-move-from { background: rgba(0,200,100,0.35) !important; }
 
 .sq .dot {
   position: absolute;

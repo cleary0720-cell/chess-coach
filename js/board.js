@@ -55,6 +55,16 @@ class ChessBoard {
         this.el.appendChild(sq);
       });
     });
+
+    // SVG overlay for arrows
+    this.arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    this.arrowSvg.setAttribute('viewBox', '0 0 8 8');
+    this.arrowSvg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:visible';
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `<marker id="arr-${this.el.id}" markerWidth="5" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0,5 2,0 4" fill="rgba(0,190,90,0.92)"/></marker>`;
+    this.arrowSvg.appendChild(defs);
+    this.el.appendChild(this.arrowSvg);
+
     this.render();
   }
 
@@ -96,7 +106,8 @@ class ChessBoard {
       if (this.selected === sqName) sq.classList.add('selected');
       if (this.lastMove?.from === sqName) sq.classList.add('last-move-from');
       if (this.lastMove?.to   === sqName) sq.classList.add('last-move-to');
-      if (this.highlighted === sqName)   sq.classList.add('best-move');
+      if (this.highlighted?.from === sqName) sq.classList.add('best-move-from');
+      if (this.highlighted?.to   === sqName) sq.classList.add('best-move');
     });
   }
 
@@ -112,6 +123,7 @@ class ChessBoard {
         this.selected = null;
         this.legalDests = [];
         this.highlighted = null;
+        this._clearArrows();
         this.render();
         this.onMove(move);
         return;
@@ -156,16 +168,48 @@ class ChessBoard {
     return move;
   }
 
-  // Flash the best move square briefly
-  flashBestMove(uci, durationMs = 2500) {
+  // Show best move with arrow and highlighted squares
+  flashBestMove(uci, durationMs = 3000) {
     if (!uci) return;
-    const to = uci.slice(2, 4);
-    this.highlighted = to;
+    const from = uci.slice(0, 2);
+    const to   = uci.slice(2, 4);
+    this._clearArrows();
+    this.highlighted = { from, to };
     this.render();
+    this._drawArrow(from, to);
     setTimeout(() => {
       this.highlighted = null;
+      this._clearArrows();
       this.render();
     }, durationMs);
+  }
+
+  _squareCenter(sqName) {
+    const fi = this._files().indexOf(sqName[0]);
+    const ri = this._ranks().indexOf(parseInt(sqName[1]));
+    return { x: fi + 0.5, y: ri + 0.5 };
+  }
+
+  _clearArrows() {
+    if (this.arrowSvg) this.arrowSvg.querySelectorAll('line').forEach(e => e.remove());
+  }
+
+  _drawArrow(from, to) {
+    const fc = this._squareCenter(from);
+    const tc = this._squareCenter(to);
+    const dx = tc.x - fc.x, dy = tc.y - fc.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const ux = dx / len, uy = dy / len;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fc.x + ux * 0.25);
+    line.setAttribute('y1', fc.y + uy * 0.25);
+    line.setAttribute('x2', tc.x - ux * 0.32);
+    line.setAttribute('y2', tc.y - uy * 0.32);
+    line.setAttribute('stroke', 'rgba(0,190,90,0.92)');
+    line.setAttribute('stroke-width', '0.28');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('marker-end', `url(#arr-${this.el.id})`);
+    this.arrowSvg.appendChild(line);
   }
 
   flip(flipped) {
