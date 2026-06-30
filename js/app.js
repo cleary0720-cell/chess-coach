@@ -82,11 +82,12 @@ function handleWorkerMsg(event) {
   if (msg.type === 'bestmove') {
     if (analysisPhase === 'pre') {
       // We have the best move and score before user's move.
+      pendingAnalysis.bestMoveFromPre = msg.bestMove;
       // Now analyze the position AFTER the user's move.
       analysisPhase = 'post';
       sfWorker.postMessage({
         cmd: 'analyzePosition',
-        payload: { fen: pendingAnalysis.fenAfter, depth: 15 },
+        payload: { fen: pendingAnalysis.fenAfter, depth: 10 },
       });
     } else if (analysisPhase === 'post') {
       // We now have eval after user's move.
@@ -155,7 +156,7 @@ function handleUserMove(move) {
   analysisPhase = 'pre';
   sfWorker.postMessage({
     cmd: 'analyzePosition',
-    payload: { fen: fenBefore, depth: 18 },
+    payload: { fen: fenBefore, depth: 12 },
   });
 
   if (checkGameEnd()) return;
