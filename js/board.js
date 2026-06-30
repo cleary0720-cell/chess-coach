@@ -72,6 +72,7 @@ class ChessBoard {
         const key = piece.color + piece.type.toUpperCase();
         const p = document.createElement('span');
         p.className = 'piece';
+        p.dataset.color = piece.color;
         p.textContent = PIECES[key];
         sq.appendChild(p);
       }

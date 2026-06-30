@@ -158,6 +158,14 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
 
 /* Piece */
 .piece { pointer-events: none; z-index: 1; }
+.piece[data-color="w"] {
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 6px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.piece[data-color="b"] {
+  color: #1a1a1a;
+  text-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.5), 1px 1px 0 rgba(255,255,255,0.6), -1px -1px 0 rgba(255,255,255,0.6);
+}
 
 /* COACH PANEL */
 .coach-panel { min-width: 320px; max-width: 380px; display: flex; flex-direction: column; gap: 16px; }
