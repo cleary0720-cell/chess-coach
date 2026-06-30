@@ -96,7 +96,7 @@ nav a.active { color: var(--text); border-bottom-color: var(--accent); }
   gap: 8px;
 }
 
-#board {
+#board, #puzzleBoard, #reviewBoard {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   width: min(560px, calc(100vw - 48px));
