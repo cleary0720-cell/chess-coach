@@ -1,61 +1,58 @@
-importScripts('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
+// Proxy between app.js (structured commands) and stockfish.js (raw UCI strings).
+// stockfish.js overrides self.onmessage and calls postMessage(line) for output.
 
-let engine = Stockfish();
-let pendingCallback = null;
+const _post = self.postMessage.bind(self);
+let sfHandler = null;
 let infoLines = [];
 
-engine.onmessage = function(event) {
-  const line = typeof event === 'object' ? event.data : event;
-
-  self.postMessage({ type: 'output', line });
-
+// Intercept stockfish's postMessage(line) calls before it's loaded
+self.postMessage = function(line) {
+  if (typeof line !== 'string') return;
+  _post({ type: 'output', line });
   if (line.startsWith('bestmove')) {
     const parts = line.split(' ');
-    const bestMove = parts[1];
-    const ponder   = parts[3] || null;
-    self.postMessage({ type: 'bestmove', bestMove, ponder, infoLines: infoLines.slice() });
+    _post({ type: 'bestmove', bestMove: parts[1], ponder: parts[3] || null, infoLines: infoLines.slice() });
     infoLines = [];
   } else if (line.startsWith('info') && line.includes('score')) {
     infoLines.push(line);
   }
 };
 
+// Load stockfish — sets self.onmessage to its UCI handler
+importScripts('../lib/stockfish.js');
+
+// Capture stockfish's handler, replace with our own
+sfHandler = self.onmessage;
+
+function send(str) { sfHandler.call(self, { data: str }); }
+
 self.onmessage = function(event) {
   const { cmd, payload } = event.data;
-
   switch (cmd) {
     case 'init':
-      engine.postMessage('uci');
-      engine.postMessage('setoption name Hash value 64');
-      engine.postMessage('isready');
+      send('uci');
+      send('setoption name Hash value 64');
+      send('isready');
       break;
-
     case 'setSkill':
-      engine.postMessage(`setoption name Skill Level value ${payload.level}`);
+      send(`setoption name Skill Level value ${payload.level}`);
       break;
-
     case 'analyzePosition':
-      // Evaluate a position to get its score and best move
-      // payload: { fen, depth }
-      engine.postMessage('stop');
+      send('stop');
       infoLines = [];
-      engine.postMessage(`position fen ${payload.fen}`);
-      engine.postMessage(`setoption name Skill Level value 20`); // always max for analysis
-      engine.postMessage(`go depth ${payload.depth || 18}`);
+      send(`position fen ${payload.fen}`);
+      send('setoption name Skill Level value 20');
+      send(`go depth ${payload.depth || 12}`);
       break;
-
     case 'makeMove':
-      // Let engine play a move with the given skill level
-      // payload: { moves (space-sep UCI from start), skillLevel, movetime }
-      engine.postMessage('stop');
+      send('stop');
       infoLines = [];
-      engine.postMessage(`setoption name Skill Level value ${payload.skillLevel}`);
-      engine.postMessage(`position startpos moves ${payload.moves}`);
-      engine.postMessage(`go movetime ${payload.movetime || 1000}`);
+      send(`setoption name Skill Level value ${payload.skillLevel}`);
+      send(`position startpos moves ${payload.moves}`);
+      send(`go movetime ${payload.movetime || 1000}`);
       break;
-
     case 'stop':
-      engine.postMessage('stop');
+      send('stop');
       break;
   }
 };
