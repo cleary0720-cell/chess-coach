@@ -1,7 +1,7 @@
 // Vanilla chess board renderer. Wraps chess.js.
 // Usage: const b = new ChessBoard('board-element-id', chess, { onMove, flipped });
 
-const PIECE_CDN = 'https://cdn.jsdelivr.net/gh/lichess-org/lila/public/piece/cburnett/';
+const PIECE_CDN = 'https://cdn.jsdelivr.net/gh/lichess-org/lila@master/public/piece/cburnett/';
 const PIECE_UNICODE = {
   wK:'♔', wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
   bK:'♚', bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟',
